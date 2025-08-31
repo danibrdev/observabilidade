@@ -1,4 +1,4 @@
-# Observabilide Api (.NET 8 + Docker + OpenTelemetry + Elasticsearch)
+# Observabilide Api (.NET 9 + Docker + OpenTelemetry + Elasticsearch)
 
 API RESTful desenvolvida em .NET 9, containerizada com Docker e integrada com OpenTelemetry Collector e Elasticsearch para coleta de logs.
 

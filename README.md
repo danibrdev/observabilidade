@@ -35,5 +35,8 @@ Este projeto segue Git Flow com os seguintes padrões de nomeação:
 
 ## 🚀 Como rodar localmente
 
+Antes de rodar o projeto, crie um arquivo `.env` na raiz da solução com as variáveis que são utilizadas nos arquivos `.yml`
+
+
 ```bash
 docker-compose up --build

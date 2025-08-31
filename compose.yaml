@@ -1,0 +1,102 @@
+services: 
+  observabilidade-api:
+    platform: linux/arm64
+    container_name: observabilidade-api
+    build: #buscar do dockefile (se eu quiser uma imagem pronta eu troco isso para image)
+      context: ./Observabilidade.Api #caminho onde está alocada o Dockerfile
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" #host:container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_HOST_PATH=/usr/share/dotnet
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+    restart: unless-stopped #container reinicia automaticamente se cair
+    networks:
+      - observability-net
+
+  otel-collector:
+    platform: linux/arm64
+    container_name: otel-collector
+    # image: otel/opentelemetry-collector-contrib:latest
+    build:
+      context: ./otel-collector
+      dockerfile: Dockerfile
+    command: ["--config", "/etc/otel-collector-config.yaml"]
+    env_file:
+      - .env
+    volumes: #compartilha o arquivo do host : com o do container
+      - ./otel-collector/config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - 1888:1888 # pprof extension
+      - 8888:8888 # Prometheus metrics exposed by the Collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4317:4317 # OTLP gRPC receiver
+      - 4318:4318 # OTLP http receiver
+      - 55679:55679 # zpages extension
+    healthcheck:
+      test: ["CMD-SHELL", "curl --max-time 5 -s -f http://localhost:13133 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped #container reinicia automaticamente se cair
+    networks:
+      - observability-net
+
+  elasticsearch:
+    platform: linux/arm64
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.2
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node            # Para ambiente de desenvolvimento
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g            # Heap configurável
+      # - ELASTIC_PASSWORD=${ES_PASSWORD}
+      - xpack.security.enabled=false
+    env_file:
+      - .env
+    volumes:
+      - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --max-time 5 -s -f http://localhost:9200/_cluster/health | grep -q '\"status\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped #container reinicia automaticamente se cair
+    networks:
+      - observability-net
+
+  kibana:
+    platform: linux/arm64
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:9.1.2
+    env_file:
+      - .env
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    ports:
+      - 5601:5601
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped #container reinicia automaticamente se cair
+    networks:
+      - observability-net
+
+volumes: 
+  es-data:
+
+# Definição da rede interna para comunicação entre serviços
+networks:
+  observability-net:
+    driver: bridge

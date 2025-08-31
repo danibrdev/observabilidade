@@ -1,0 +1,5 @@
+# usar para coisas estáticas, que não mudam de acordo com o ambiente. 
+
+cluster.name: "otel-logs-cluster"
+network.host: 0.0.0.0
+http.port: 9200

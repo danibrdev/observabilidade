@@ -8,7 +8,8 @@
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:5091;https://localhost:7087",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://otel-collector:4317"
       }
     }
   },

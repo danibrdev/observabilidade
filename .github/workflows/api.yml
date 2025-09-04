@@ -74,7 +74,7 @@ jobs:
              --username danibrdev --password ${{ secrets.GITHUB_TOKEN }} \
              --store-password-in-clear-text
     
-    - name: Pack Projeto Estudos.Common
+      - name: Pack Projeto Estudos.Common
         run: dotnet pack Estudos.Common/Estudos.Common.csproj -c Release -o ./nupkg
   
       - name: Push Package to GitHub Packages

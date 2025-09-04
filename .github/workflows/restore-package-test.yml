@@ -1,4 +1,4 @@
-name: Test NuGet Restore
+name: Test - NuGet Restore
 on:
   workflow_dispatch:
 jobs:

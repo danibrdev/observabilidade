@@ -13,7 +13,19 @@ WORKDIR /Observabilidade.Api
 
 # Copiar csproj e restaurar
 COPY ["Observabilidade.Api.csproj", "."]
-RUN dotnet restore "Observabilidade.Api.csproj"
+
+# O token não fica nas camadas da imagem
+# 🔹 Restaurar pacotes privados usando BuildKit secret
+# Restaurar com sources adicionadas on-the-fly, usando secret
+RUN --mount=type=secret,id=github_token,target=/run/secrets/.github_token \
+    DOTNET_CLI_HOME=/tmp \
+    GITHUB_TOKEN=$(cat /run/secrets/.github_token) && \
+    rm -f /tmp/NuGet.config && \
+    dotnet nuget remove source github || true && \
+    dotnet nuget remove source nuget.org || true && \
+    dotnet nuget add source --name github "https://nuget.pkg.github.com/danibrdev/index.json" --username danibrdev --password "$GITHUB_TOKEN" --store-password-in-clear-text && \
+    dotnet nuget add source --name nuget.org "https://api.nuget.org/v3/index.json" && \
+    dotnet restore "Observabilidade.Api.csproj"
 
 # ⚙️ Configuração de build
 ARG BUILD_CONFIGURATION=Release
@@ -21,9 +33,6 @@ ARG BUILD_CONFIGURATION=Release
 # 📦 Copiar restante do projeto para /src e compilar
 COPY . .
 RUN dotnet build "Observabilidade.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-# ⚙️ Configuração de build
-ARG BUILD_CONFIGURATION=Release
 
 # 🔹 Publicação
 FROM build AS publish

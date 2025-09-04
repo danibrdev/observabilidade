@@ -1,0 +1,103 @@
+name: CI - Git Flow (.NET 9)
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+    types: [opened, synchronize, reopened]
+
+  push:
+    branches:
+      - feat/*
+      - feature/*
+      - release/*
+      - hotfix/*
+      - bugfix/*
+      - chore/*
+      - docs/*
+      - refactor/*
+      - ref/*
+
+jobs:
+  restore-build-test:
+    name: 🔧 Restore, Build & Test
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: read
+  
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Configure NuGet Feed
+          run: dotnet nuget add source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --name github \
+            --username ${{ github.repository_owner  }} \
+            --password ${{ secrets.GITHUB_TOKEN }} \
+            --store-password-in-clear-text 
+
+      - name: Restore dependencies
+        run: dotnet restore ./Observabilidade.Api/Observabilidade.Api.csproj
+
+      - name: Build API
+        run: dotnet build ./Observabilidade.Api/Observabilidade.Api.csproj -c Release -o ./build
+
+      # - name: Run tests
+      #   run: dotnet test ./Observabilidade.Api/Observabilidade.Api.csproj --no-build --verbosity normal
+
+  publish-packages:
+    name: 📦 Publish NuGet Packages
+    runs-on: ubuntu-latest
+    needs: restore-build-test
+    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+  
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.0.x
+  
+      - name: Configure NuGet Feed
+        run: dotnet nuget add source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+          --name github \
+          --username ${{ github.repository_owner }} \
+          --password ${{ secrets.GITHUB_TOKEN }} \
+          --store-password-in-clear-text
+  
+      - name: Pack Projeto Estudos.Common
+        run: dotnet pack Estudos.Common/Estudos.Common.csproj -c Release -o ./nupkg
+  
+      - name: Push Package to GitHub Packages
+        run: dotnet nuget push ./nupkg/*.nupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }}
+  
+  publish-docker:
+    name: 🐳 Build & Push Docker
+    runs-on: ubuntu-latest
+    needs: restore-build-test
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+  
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+  
+      - name: Build Docker Image
+        run: docker build -t ghcr.io/${{ github.repository_owner }}/observabilidade-api:latest ./Observabilidade.Api
+  
+      - name: Push Docker Image
+        run: docker push ghcr.io/${{ github.repository_owner }}/observabilidade-api:latest

@@ -1,0 +1,25 @@
+name: Test NuGet Restore
+on:
+  workflow_dispatch:
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Add NuGet Sources
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/danibrdev/index.json" \
+            --name github \
+            --username danibrdev \
+            --password ${{ secrets.GITHUB_TOKEN }} \
+            --store-password-in-clear-text
+          dotnet nuget add source "https://api.nuget.org/v3/index.json" --name nuget.org
+      - name: Restore Dependencies
+        run: dotnet restore ./Observabilidade.Api/Observabilidade.Api.csproj

@@ -1,7 +1,78 @@
+/packages/
+/_ReSharper.Caches/
+.DS_Store
+
+# =========================
+# Visual Studio / Rider / IDE
+# =========================
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.iml
+
+# =========================
+# Build / Output
+# =========================
 bin/
 obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
+out/
+*.exe
+*.dll
+*.pdb
+*.app
+
+# =========================
+# NuGet
+# =========================
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+*.nupkg.metadata
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+Dockerfile*
+**/docker-compose.override.yml
+**/Dockerfile*
+docker-compose.*.yml
+*.log
+
+# =========================
+# OS / System files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+
+# =========================
+# Environment / Secrets
+# =========================
 .env
-.idea.*
+.github_token
+**/.github_token
+*.secret
+
+# =========================
+# GitHub Actions (keep workflows!)
+# =========================
+!.github/workflows/
+
+# =========================
+# Rider / JetBrains caches
+# =========================
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# =========================
+# Misc
+# =========================
+*.log

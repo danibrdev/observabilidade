@@ -22,7 +22,6 @@ processors:
     send_batch_size: 50          # quantos itens enviar por vez (default 512, melhor pra prod)
     timeout: 10s                 # tempo máximo de espera antes de enviar (default 5s)
     send_batch_max_size: 1000     # limite máximo do lote
-    # optional: num_workers: 2   # número de threads que processam o batch (default 1)
 
 # Para onde os dados vão
 # mandam os logs para onde precisam chegar
@@ -38,6 +37,16 @@ exporters:
     flush:
       bytes: 3145728   # ~3MB
       interval: 5s
+    # Não funciona com elastic
+    # sending_queue: #Essa seção ativa uma fila interna que armazena os dados antes de enviá-los. Isso ajuda a lidar com picos de carga ou lentidão no destino.
+    #   enabled: true
+    #   num_consumers: 4 #define quantos consumidores (threads internas) vão processar e enviar os dados da fila. Mais consumidores = mais paralelismo.
+    #   queue_size: 5000 #Tamanho máximo da fila. Se a fila encher, os dados novos podem ser descartados 
+    # retry_on_failure:
+    #   enabled: true
+    #   initial_interval: 5s
+    #   max_interval: 30s
+    #   max_elapsed_time: 15m
   debug:
     verbosity: detailed
     sampling_initial: 5
@@ -61,6 +70,14 @@ extensions:
 
 service:
   extensions: [health_check, basicauth]
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: "0.0.0.0"
+                port: 8888
   # linha de produção
   pipelines:
     logs:

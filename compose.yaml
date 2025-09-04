@@ -5,6 +5,8 @@ services:
     build: #buscar do dockefile (se eu quiser uma imagem pronta eu troco isso para image)
       context: ./Observabilidade.Api #caminho onde está alocada o Dockerfile
       dockerfile: Dockerfile
+      secrets:
+        - github_token
     ports:
       - "8080:8080" #host:container
     environment:
@@ -29,6 +31,8 @@ services:
     command: ["--config", "/etc/otel-collector-config.yaml"]
     env_file:
       - .env
+    environment:
+      - TZ=America/Sao_Paulo
     volumes: #compartilha o arquivo do host : com o do container
       - ./otel-collector/config.yaml:/etc/otel-collector-config.yaml
     ports:
@@ -62,6 +66,7 @@ services:
       - ES_JAVA_OPTS=-Xms1g -Xmx1g            # Heap configurável
       # - ELASTIC_PASSWORD=${ES_PASSWORD}
       - xpack.security.enabled=false
+      - TZ=America/Sao_Paulo
     env_file:
       - .env
     volumes:
@@ -82,6 +87,8 @@ services:
     image: docker.elastic.co/kibana/kibana:9.1.2
     env_file:
       - .env
+    environment:
+      - TZ=America/Sao_Paulo
     volumes:
       - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     ports:
@@ -95,6 +102,10 @@ services:
 
 volumes: 
   es-data:
+
+secrets:
+  github_token:
+    file: ./.github_token
 
 # Definição da rede interna para comunicação entre serviços
 networks:
